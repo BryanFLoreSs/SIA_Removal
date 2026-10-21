@@ -1,3 +1,3 @@
 <?php
 
-return ['openweather' => ['key' => env('WEATHER_API_KEY')]];
+return ['google_weather' => ['key' => env('WEATHER_API_KEY')]];
