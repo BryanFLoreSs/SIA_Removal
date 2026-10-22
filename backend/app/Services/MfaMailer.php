@@ -4,14 +4,15 @@ namespace App\Services;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class MfaMailer
 {
     public function sendCode(string $recipient, string $code): void
     {
         try {
-            if ($key = config('services.resend.key')) {
-                $this->sendWithResend((string) $key, $recipient, $code);
+            if (config('services.resend.key')) {
+                $this->sendWithResend($recipient, $code);
                 return;
             }
 
@@ -22,8 +23,9 @@ class MfaMailer
         }
     }
 
-    private function sendWithResend(string $key, string $recipient, string $code): void
+    private function sendWithResend(string $recipient, string $code): void
     {
+        $key = (string) config('services.resend.key');
         $response = Http::timeout(10)->withToken($key)->post('https://api.resend.com/emails', [
             'from' => (string) config('services.resend.from'),
             'to' => [$recipient],
@@ -33,6 +35,10 @@ class MfaMailer
         ]);
 
         if (! $response->successful()) {
+            Log::warning('Resend rejected an MFA verification email.', [
+                'status' => $response->status(),
+                'response' => $response->json() ?? $response->body(),
+            ]);
             throw new \RuntimeException('Resend did not accept the verification email.');
         }
     }
