@@ -121,6 +121,7 @@ Authentication and recovery routes are throttled. The weather endpoint accepts `
 1. Configure the database, application key, frontend origin, Google keys, and SMTP credentials in the deployment platform.
 2. Run `php artisan migrate --force` on the backend host.
 3. Deploy the frontend with `NEXT_PUBLIC_API_URL` pointing to the HTTPS API URL.
+4. On Render Free, set `RESEND_API_KEY` and `RESEND_FROM` for MFA email. Resend sends through HTTPS, which works where SMTP ports are unavailable. Verify a sender domain in Resend before production use.
 4. Restrict CORS and Google Maps key referrers to the published domain.
 5. Verify registration, email MFA, password recovery, location access, weather, map rendering, and logout in the deployed environment.
 

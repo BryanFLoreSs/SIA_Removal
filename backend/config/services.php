@@ -2,6 +2,10 @@
 
 return [
     'google_weather' => ['key' => env('WEATHER_API_KEY')],
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+        'from' => env('RESEND_FROM', 'CityPulse <onboarding@resend.dev>'),
+    ],
     'mfa_mailer' => [
         'host' => env('PHPMAILER_HOST', env('MAIL_HOST', '127.0.0.1')),
         'port' => env('PHPMAILER_PORT', env('MAIL_PORT', 587)),
