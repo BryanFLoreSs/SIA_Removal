@@ -4,7 +4,7 @@ CityPulse is a responsive city dashboard that brings account security, local wea
 
 **Repository:** [github.com/BryanFLoreSs/SIA_Removal](https://github.com/BryanFLoreSs/SIA_Removal)<br>
 **Author:** Bryan Flores<br>
-**Project:** System Integration Midterm Remediation
+**Project:** System Integration Midterm Remediation [Actually already passed]
 
 ## Highlights
 
