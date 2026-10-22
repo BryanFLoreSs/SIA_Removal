@@ -20,7 +20,7 @@ flowchart LR
 - Frontend registration and login requests to Laravel; bearer token session storage, `/me` dashboard gate, and logout token revocation.
 - Laravel API routes/controllers for registration, login, current user, logout, password recovery/reset, and weather.
 - Password hashing and server validation through Laravel; generic password recovery response, throttled auth/reset routes, expiring single-use Laravel reset tokens, and server-only weather credentials.
-- TOTP authenticator enrollment and login challenges, encrypted MFA secrets, short-lived challenges, and bounded verification attempts.
+- Email MFA login challenges delivered through PHPMailer, with short-lived codes and bounded verification attempts.
 - Database migrations for users, reset tokens, and Sanctum personal access tokens.
 - Google Maps Embed map and a Laravel Google Weather API integration.
 
@@ -52,13 +52,12 @@ Frontend `.env.local` contains `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_GOOGLE_MAP
 | Method | Path | Purpose | Auth |
 |---|---|---|---|
 | POST | `/api/register` | Create account and issue bearer token | No |
-| POST | `/api/login` | Authenticate; request TOTP challenge when enabled | No |
+| POST | `/api/login` | Authenticate; send an email MFA code when enabled | No |
 | GET | `/api/me` | Return authenticated user | Yes |
 | POST | `/api/logout` | Revoke current token | Yes |
 | POST | `/api/forgot-password` | Send generic password-reset response | No, throttled |
 | POST | `/api/reset-password` | Validate reset token and set new password | No, throttled |
-| POST | `/api/mfa/setup` | Start authenticator enrollment | Yes, throttled |
-| POST | `/api/mfa/enable` | Verify first authenticator code | Yes, throttled |
+| POST | `/api/mfa/enable` | Enable email MFA | Yes, throttled |
 | POST | `/api/mfa/challenge` | Complete MFA login challenge | No, throttled |
 | GET | `/api/weather?city=Manila&latitude=14.5995&longitude=120.9842` | Get current conditions from Google Weather for the provided coordinates | Yes |
 
@@ -77,4 +76,4 @@ GitHub repository: _add the repository URL after pushing_
 
 ## Security and known limitations
 
-Laravel hashes passwords, validates input server-side, uses Eloquent query binding, issues revocable Sanctum bearer tokens, throttles account endpoints, validates expiring reset tokens, and encrypts TOTP secrets at rest. The browser keeps the API token in local storage for this learning project; this is exposed to scripts running in the same origin, so a production-grade deployment should consider a backend-for-frontend with secure, HttpOnly cookies. CORS must be restricted to the deployed frontend origin. Google Weather requests require latitude and longitude; the dashboard starts with Manila coordinates and can request the user's current coordinates after they click the location button and grant browser permission. No production deployment is included in the repository yet.
+Laravel hashes passwords, validates input server-side, uses Eloquent query binding, issues revocable Sanctum bearer tokens, throttles account endpoints, validates expiring reset tokens, and stores only hashes of email MFA codes. The browser keeps the API token in local storage for this learning project; this is exposed to scripts running in the same origin, so a production-grade deployment should consider a backend-for-frontend with secure, HttpOnly cookies. CORS must be restricted to the deployed frontend origin. Google Weather requests require latitude and longitude; the dashboard starts with Manila coordinates and can request the user's current coordinates after they click the location button and grant browser permission. No production deployment is included in the repository yet.

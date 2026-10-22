@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { api, clearSession, CityPulseUser } from "../lib/api";
 
 type Weather = { location: string; temperature_c: number; feels_like_c: number; condition: string; humidity: number; wind_mps: number };
@@ -27,7 +27,6 @@ export default function DashboardPage() {
   const [locationError, setLocationError] = useState("");
   const [busy, setBusy] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [mfaSecret, setMfaSecret] = useState("");
   const [mfaMessage, setMfaMessage] = useState("");
   const [mfaError, setMfaError] = useState("");
   const [mfaBusy, setMfaBusy] = useState(false);
@@ -75,25 +74,16 @@ export default function DashboardPage() {
     }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
   }
 
-  async function startMfa() {
+  async function enableMfa() {
     setMfaError(""); setMfaMessage("");
     const token = localStorage.getItem("citypulse_token");
     if (!token) return;
     setMfaBusy(true);
-    try { const result = await api<{ secret: string }>("/mfa/setup", { method: "POST" }, token); setMfaSecret(result.secret); }
-    catch (error) { setMfaError(error instanceof Error ? error.message : "Could not start MFA setup."); }
-    finally { setMfaBusy(false); }
-  }
-
-  async function confirmMfa(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setMfaError(""); setMfaMessage("");
-    const token = localStorage.getItem("citypulse_token");
-    if (!token) return;
-    setMfaBusy(true);
     try {
-      const result = await api<{ message: string }>("/mfa/enable", { method: "POST", body: JSON.stringify({ code: new FormData(event.currentTarget).get("mfa_code") }) }, token);
-      setMfaMessage(result.message); setMfaSecret(""); setUser((current) => current ? { ...current, mfa_enabled: true } : current);
-    } catch (error) { setMfaError(error instanceof Error ? error.message : "Could not verify the authenticator code."); }
+      const result = await api<{ message: string }>("/mfa/enable", { method: "POST" }, token);
+      setMfaMessage(result.message);
+      setUser((current) => current ? { ...current, mfa_enabled: true } : current);
+    } catch (error) { setMfaError(error instanceof Error ? error.message : "Could not enable email MFA."); }
     finally { setMfaBusy(false); }
   }
 
@@ -117,7 +107,7 @@ export default function DashboardPage() {
         <div className="map-controls"><button className="button button-primary" onClick={useMyLocation} disabled={locationBusy}>{locationBusy ? "Finding you…" : "⌖ Use my current location"}</button>{locationError && <p className="form-error" role="alert">{locationError}</p>}<p className="map-foot"><span>{place.label.toUpperCase()}</span><a href={externalMapUrl} target="_blank" rel="noreferrer">OPEN IN GOOGLE MAPS ↗</a></p></div>
       </article>
     </section>
-    <section className="mfa-card"><div><span className="eyebrow">ACCOUNT SECURITY</span><h2>Authenticator MFA</h2><p>{user.mfa_enabled ? "Enabled. Sign-ins require a current code from your authenticator app." : "Add a time-based one-time code to protect your account."}</p></div>{!user.mfa_enabled && !mfaSecret && <button className="button button-quiet" disabled={mfaBusy} onClick={startMfa}>{mfaBusy ? "Preparing…" : "Set up authenticator"}</button>}{mfaSecret && <div className="mfa-setup"><p>Add this setup key to your authenticator app:</p><code>{mfaSecret}</code><p className="muted">Choose time-based (TOTP), six digits, 30-second interval.</p><form onSubmit={confirmMfa}><label>Enter the current code<input name="mfa_code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} required autoComplete="one-time-code" /></label><button className="button button-primary" disabled={mfaBusy}>{mfaBusy ? "Verifying…" : "Enable MFA →"}</button></form></div>}{mfaMessage && <p className="form-success" role="status">{mfaMessage}</p>}{mfaError && <p className="form-error" role="alert">{mfaError}</p>}</section>
+    <section className="mfa-card"><div><span className="eyebrow">ACCOUNT SECURITY</span><h2>Email MFA</h2><p>{user.mfa_enabled ? "Enabled. Sign-ins require a six-digit code sent to your email address." : "Require a six-digit email code after your password to protect your account."}</p></div>{!user.mfa_enabled && <button className="button button-quiet" disabled={mfaBusy} onClick={enableMfa}>{mfaBusy ? "Enabling…" : "Enable email MFA"}</button>}{mfaMessage && <p className="form-success" role="status">{mfaMessage}</p>}{mfaError && <p className="form-error" role="alert">{mfaError}</p>}</section>
     <section className="bottom-note"><span className="note-icon">✦</span><div><strong>Signed in as {user.email}</strong><p>Your session is validated by the Laravel API. Signing out revokes this access token.</p></div><span className="note-arrow">↗</span></section>
     <footer><span>CityPulse · Your city, in clear view.</span><Link href="/">Back to home ↗</Link></footer>
   </main>;

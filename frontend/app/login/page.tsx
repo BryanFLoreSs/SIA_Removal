@@ -37,11 +37,11 @@ export default function LoginPage() {
       <Link className="brand" href="/">◉ CityPulse</Link>
       <section className="auth-card">
         <span className="eyebrow">{challenge ? "TWO-STEP VERIFICATION" : "WELCOME BACK"}</span>
-        <h1>{challenge ? <>Check your<br />authenticator.</> : <>Sign in to your<br />city dashboard.</>}</h1>
-        <p className="muted">{challenge ? "Enter the current six-digit code from your authenticator app." : "Use your CityPulse account to continue."}</p>
+        <h1>{challenge ? <>Check your<br />email.</> : <>Sign in to your<br />city dashboard.</>}</h1>
+        <p className="muted">{challenge ? "We sent a six-digit code to your email address. It expires in five minutes." : "Use your CityPulse account to continue."}</p>
         <form onSubmit={submit}>
           {challenge ? (
-            <label>6-digit authenticator code<input type="text" name="code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="one-time-code" required autoFocus /></label>
+            <label>6-digit email code<input type="text" name="code" inputMode="numeric" pattern="[0-9]{6}" maxLength={6} autoComplete="one-time-code" required autoFocus /></label>
           ) : (
             <>
               <label>Email address<input type="email" name="email" placeholder="you@example.com" required autoComplete="email" /></label>
