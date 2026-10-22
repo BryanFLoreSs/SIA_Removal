@@ -1,79 +1,130 @@
-# CityPulse — System Integration Midterm Remediation
+# CityPulse
 
-CityPulse is a city dashboard project built with a Next.js frontend and a Laravel JSON API. It is being developed as a system integration demonstration: the frontend calls protected Laravel endpoints, Laravel stores account records in PostgreSQL, MySQL, or local SQLite, and the API fetches weather data from Google Maps Platform Weather API. The dashboard map uses Google Maps Embed API.
+CityPulse is a responsive city dashboard that brings account security, local weather, and maps into one focused experience. It pairs a Next.js frontend with a Laravel JSON API, a relational database, Google Maps Platform services, and email-based multi-factor authentication.
+
+**Repository:** [github.com/BryanFLoreSs/SIA_Removal](https://github.com/BryanFLoreSs/SIA_Removal)<br>
+**Author:** Bryan Flores<br>
+**Project:** System Integration Midterm Remediation
+
+## Highlights
+
+- Create an account, sign in, reset a password, and revoke a session at logout.
+- Enable email MFA and complete sign-in with a short-lived six-digit verification code.
+- View current weather for Manila or a browser-selected location.
+- Explore the selected location through an embedded Google Map.
+- Receive clear success popups for completed account actions and inline feedback for form errors.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  U[Browser] -->|HTTPS / JSON / bearer token| F[Next.js on Vercel]
-  F -->|API requests| L[Laravel API on PHP hosting]
-  L -->|Eloquent / PDO| DB[(PostgreSQL or MySQL)]
-  L -->|server-side request| W[Google Maps Platform Weather API]
-  F -->|restricted browser key| M[Google Maps Embed API]
+  B[Browser] -->|HTTPS / JSON| N[Next.js frontend]
+  N -->|Bearer token| L[Laravel API]
+  L -->|Eloquent / PDO| D[(PostgreSQL, MySQL, or SQLite)]
+  L -->|Server-side request| W[Google Weather API]
+  L -->|SMTP| M[Email MFA]
+  N -->|Restricted browser key| G[Google Maps Embed API]
 ```
 
-## Implemented in this repository
+## Technology
 
-- Responsive home, registration, login, recovery, reset, and dashboard pages.
-- Google Maps view with an explicit current-location control. Browser coordinates are used to center the map and request weather.
-- Frontend registration and login requests to Laravel; bearer token session storage, `/me` dashboard gate, and logout token revocation.
-- Laravel API routes/controllers for registration, login, current user, logout, password recovery/reset, and weather.
-- Password hashing and server validation through Laravel; generic password recovery response, throttled auth/reset routes, expiring single-use Laravel reset tokens, and server-only weather credentials.
-- Email MFA login challenges delivered through PHPMailer, with short-lived codes and bounded verification attempts.
-- Database migrations for users, reset tokens, and Sanctum personal access tokens.
-- Google Maps Embed map and a Laravel Google Weather API integration.
-
-**Still to complete:** production mail delivery, dependency installation, deployment, live production verification, and the final demo walkthrough. The backend dependencies cannot be installed in an offline environment; use Composer when Packagist is reachable.
+| Layer | Technology |
+|---|---|
+| Frontend | Next.js, React, TypeScript |
+| Backend | Laravel 12, PHP 8.2+ |
+| Authentication | Laravel Sanctum and PHPMailer |
+| Data | PostgreSQL, MySQL, or SQLite |
+| Integrations | Google Maps Embed API and Google Maps Platform Weather API |
 
 ## Local setup
 
+### Requirements
+
+- Node.js 20+ and npm
+- PHP 8.2+, Composer, and a supported PDO database driver
+- A database server if you are not using SQLite
+- A Google Maps Platform project for the map and weather integrations
+- An SMTP account for email MFA in a full local sign-in test
+
 ### Backend
 
-1. Install PHP 8.2+, Composer, and the PDO driver for your chosen database.
-2. From `backend/`, run `composer install`.
-3. Copy `.env.example` to `.env`, set database credentials and `FRONTEND_URL`, then run `php artisan key:generate`.
-4. Run `php artisan migrate` and `php artisan serve`.
-5. For local password recovery, use `MAIL_MAILER=log` and inspect `storage/logs/laravel.log` for the reset link. Configure a real mail service for deployed use.
-6. Enable Google Maps Platform Weather API in your Google Cloud project and set `WEATHER_API_KEY` on the backend. Standard keys require billing; a Google Maps Demo Key is available for prototyping. The weather key is never sent to the browser.
+```bash
+cd backend
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan serve
+```
+
+Set the database values, frontend origin, weather key, and SMTP values in `backend/.env`. Never commit that file.
+
+For Gmail SMTP, create an App Password and use it as `PHPMAILER_PASSWORD`; regular Gmail passwords will not work. The email address in `PHPMAILER_FROM_ADDRESS` should match the authorized SMTP sender.
 
 ### Frontend
 
-1. From `frontend/`, run `npm install`.
-2. Copy `.env.example` to `.env.local`, set `NEXT_PUBLIC_API_URL=http://localhost:8000/api`, and set `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` to a browser key restricted to your website referrers and the Maps Embed API.
-3. Run `npm run dev` and open http://localhost:3000.
+```bash
+cd frontend
+npm install
+cp .env.example .env.local
+npm run dev
+```
 
-## Environment variables
+Set the following values in `frontend/.env.local`:
 
-Frontend `.env.local` contains `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`. The Maps key is delivered to the browser, so restrict it by allowed website referrers and Maps Embed API. Backend `.env` contains `APP_KEY`, `APP_URL`, `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS`, database variables, mail settings, and private `WEATHER_API_KEY`. Keep the weather key server-side. See the `.env.example` files for placeholders. Never commit live credentials.
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=replace-me
+```
 
-## API contract
+Open [http://localhost:3000](http://localhost:3000). The browser map key is public by design, so restrict it in Google Cloud to the application’s domains and the Maps Embed API.
 
-| Method | Path | Purpose | Auth |
+## Email MFA flow
+
+1. An authenticated user selects **Enable email MFA** in the dashboard.
+2. At the next sign-in, CityPulse validates the password and sends a six-digit code through PHPMailer.
+3. The code expires after five minutes and is limited to five verification attempts.
+4. On success, the challenge is deleted and Laravel issues a Sanctum access token.
+
+## API overview
+
+| Method | Endpoint | Description | Authentication |
 |---|---|---|---|
-| POST | `/api/register` | Create account and issue bearer token | No |
-| POST | `/api/login` | Authenticate; send an email MFA code when enabled | No |
-| GET | `/api/me` | Return authenticated user | Yes |
-| POST | `/api/logout` | Revoke current token | Yes |
-| POST | `/api/forgot-password` | Send generic password-reset response | No, throttled |
-| POST | `/api/reset-password` | Validate reset token and set new password | No, throttled |
-| POST | `/api/mfa/enable` | Enable email MFA | Yes, throttled |
-| POST | `/api/mfa/challenge` | Complete MFA login challenge | No, throttled |
-| GET | `/api/weather?city=Manila&latitude=14.5995&longitude=120.9842` | Get current conditions from Google Weather for the provided coordinates | Yes |
+| `POST` | `/api/register` | Create an account | No |
+| `POST` | `/api/login` | Sign in; sends an MFA code when enabled | No |
+| `POST` | `/api/mfa/challenge` | Verify an email MFA code | No |
+| `POST` | `/api/forgot-password` | Request a password-reset link | No |
+| `POST` | `/api/reset-password` | Set a new password | No |
+| `GET` | `/api/me` | Read the signed-in account | Yes |
+| `POST` | `/api/mfa/enable` | Enable email MFA | Yes |
+| `POST` | `/api/logout` | Revoke the active token | Yes |
+| `GET` | `/api/weather` | Read weather for supplied coordinates | Yes |
 
-Registration example: `POST /api/register` with JSON `{ "name": "Alex Example", "email": "alex@example.com", "password": "replace-with-a-long-password", "password_confirmation": "replace-with-a-long-password" }`.
+Authentication and recovery routes are throttled. The weather endpoint accepts `city`, `latitude`, and `longitude` query parameters.
 
-## Deployment
+## Environment and security
 
-- Deploy `frontend/` to Vercel and set `NEXT_PUBLIC_API_URL` to the HTTPS Laravel API URL.
-- Deploy `backend/` to a PHP-compatible host, configure its environment variables and database, then run migrations.
-- Set `FRONTEND_URL` and `CORS_ALLOWED_ORIGINS` to the deployed frontend origin, use HTTPS, and configure mail and weather provider credentials on the backend host.
-- Confirm registration, sign-in, protected dashboard, weather, reset emails, and logout against production before the demonstration.
+- Keep `backend/.env` and `frontend/.env.local` private. The committed example files use placeholders only.
+- Use HTTPS and set `FRONTEND_URL` and `CORS_ALLOWED_ORIGINS` to the exact deployed frontend origin.
+- Restrict the Google Maps browser key by referrer and API; keep `WEATHER_API_KEY` on the backend.
+- CityPulse hashes passwords and MFA codes, stores only encrypted or server-held sensitive data, and revokes the current Sanctum token at logout.
+- The learning-project frontend uses local storage for its bearer token. A production system should consider secure, HttpOnly cookie sessions or a backend-for-frontend design.
 
-Vercel URL: _not deployed yet_  
-Backend API URL: _not deployed yet_  
-GitHub repository: _add the repository URL after pushing_
+## Deployment checklist
 
-## Security and known limitations
+1. Configure the database, application key, frontend origin, Google keys, and SMTP credentials in the deployment platform.
+2. Run `php artisan migrate --force` on the backend host.
+3. Deploy the frontend with `NEXT_PUBLIC_API_URL` pointing to the HTTPS API URL.
+4. Restrict CORS and Google Maps key referrers to the published domain.
+5. Verify registration, email MFA, password recovery, location access, weather, map rendering, and logout in the deployed environment.
 
-Laravel hashes passwords, validates input server-side, uses Eloquent query binding, issues revocable Sanctum bearer tokens, throttles account endpoints, validates expiring reset tokens, and stores only hashes of email MFA codes. The browser keeps the API token in local storage for this learning project; this is exposed to scripts running in the same origin, so a production-grade deployment should consider a backend-for-frontend with secure, HttpOnly cookies. CORS must be restricted to the deployed frontend origin. Google Weather requests require latitude and longitude; the dashboard starts with Manila coordinates and can request the user's current coordinates after they click the location button and grant browser permission. No production deployment is included in the repository yet.
+## Acknowledgments
+
+- [Laravel](https://laravel.com/) provides the API framework and Sanctum authentication.
+- [Next.js](https://nextjs.org/) and [React](https://react.dev/) power the frontend.
+- [PHPMailer](https://github.com/PHPMailer/PHPMailer) delivers email MFA codes through SMTP.
+- [Google Maps Platform](https://developers.google.com/maps) provides the Maps Embed and Weather APIs.
+
+## License
+
+This repository is provided for academic project use. Contact the author before reusing it beyond that context.

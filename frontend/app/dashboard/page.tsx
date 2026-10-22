@@ -118,6 +118,6 @@ export default function DashboardPage() {
     </section>
     <section className="mfa-card"><div><span className="eyebrow">ACCOUNT SECURITY</span><h2>Email MFA</h2><p>{user.mfa_enabled ? "Enabled. Sign-ins require a six-digit code sent to your email address." : "Require a six-digit email code after your password to protect your account."}</p></div>{!user.mfa_enabled && <button className="button button-quiet" disabled={mfaBusy} onClick={enableMfa}>{mfaBusy ? "Enabling…" : "Enable email MFA"}</button>}{mfaError && <p className="form-error" role="alert">{mfaError}</p>}</section>
     <section className="bottom-note"><span className="note-icon">✦</span><div><strong>Signed in as {user.email}</strong><p>Your session is validated by the Laravel API. Signing out revokes this access token.</p></div><span className="note-arrow">↗</span></section>
-    <footer><span>CityPulse · Your city, in clear view.</span><Link href="/">Back to home ↗</Link></footer>
+    <footer><span>CityPulse · Your city, in clear view.</span></footer>
   </main>;
 }
