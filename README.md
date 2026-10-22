@@ -48,6 +48,8 @@ flowchart LR
 
 ### Backend
 
+On Render, create a **Docker Web Service** with `backend` as the root directory. The included [`backend/Dockerfile`](backend/Dockerfile) installs PHP PostgreSQL support, serves Laravel from `public/`, and binds Apache to Render's `PORT` automatically.
+
 ```bash
 cd backend
 composer install
@@ -58,6 +60,8 @@ php artisan serve
 ```
 
 Set the database values, frontend origin, weather key, and SMTP values in `backend/.env`. Never commit that file.
+
+For Render, use [`backend/.env.render.example`](backend/.env.render.example) as the environment-variable checklist. Set `DB_URL` to the Supabase **Session pooler** connection URI with `sslmode=require`.
 
 For Gmail SMTP, create an App Password and use it as `PHPMAILER_PASSWORD`; regular Gmail passwords will not work. The email address in `PHPMAILER_FROM_ADDRESS` should match the authorized SMTP sender.
 
@@ -76,6 +80,8 @@ Set the following values in `frontend/.env.local`:
 NEXT_PUBLIC_API_URL=http://localhost:8000/api
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=replace-me
 ```
+
+For Vercel, add the same two values from [`frontend/.env.production.example`](frontend/.env.production.example) in the project’s Environment Variables settings.
 
 Open [http://localhost:3000](http://localhost:3000). The browser map key is public by design, so restrict it in Google Cloud to the application’s domains and the Maps Embed API.
 
