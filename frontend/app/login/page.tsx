@@ -24,6 +24,7 @@ export default function LoginPage() {
         return;
       }
       saveSession(result);
+      sessionStorage.setItem("citypulse_feedback", "Signed in successfully. Welcome back to CityPulse.");
       router.replace("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not sign in.");

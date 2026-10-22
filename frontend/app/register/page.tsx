@@ -9,7 +9,7 @@ export default function RegisterPage() {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setBusy(true); const form = new FormData(event.currentTarget);
     if (form.get("password") !== form.get("password_confirmation")) { setError("The passwords do not match."); setBusy(false); return; }
-    try { const result = await api<AuthResponse>("/register", { method: "POST", body: JSON.stringify({ name: form.get("name"), email: form.get("email"), password: form.get("password"), password_confirmation: form.get("password_confirmation") }) }); saveSession(result); router.replace("/dashboard"); }
+    try { const result = await api<AuthResponse>("/register", { method: "POST", body: JSON.stringify({ name: form.get("name"), email: form.get("email"), password: form.get("password"), password_confirmation: form.get("password_confirmation") }) }); saveSession(result); sessionStorage.setItem("citypulse_feedback", "Your CityPulse account is ready."); router.replace("/dashboard"); }
     catch (e) { setError(e instanceof Error ? e.message : "Could not create your account."); }
     finally { setBusy(false); }
   }

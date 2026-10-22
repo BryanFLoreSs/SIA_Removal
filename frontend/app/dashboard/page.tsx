@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, clearSession, CityPulseUser } from "../lib/api";
+import FeedbackPopup from "../components/FeedbackPopup";
 
 type Weather = { location: string; temperature_c: number; feels_like_c: number; condition: string; humidity: number; wind_mps: number };
 type DashboardUser = CityPulseUser & { mfa_enabled: boolean };
@@ -27,7 +28,7 @@ export default function DashboardPage() {
   const [locationError, setLocationError] = useState("");
   const [busy, setBusy] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
-  const [mfaMessage, setMfaMessage] = useState("");
+  const [feedback, setFeedback] = useState("");
   const [mfaError, setMfaError] = useState("");
   const [mfaBusy, setMfaBusy] = useState(false);
 
@@ -45,6 +46,14 @@ export default function DashboardPage() {
       .finally(() => { if (alive) setBusy(false); });
     return () => { alive = false; };
   }, [router]);
+
+  useEffect(() => {
+    const message = sessionStorage.getItem("citypulse_feedback");
+    if (message) {
+      setFeedback(message);
+      sessionStorage.removeItem("citypulse_feedback");
+    }
+  }, []);
 
   async function logout() {
     setLoggingOut(true);
@@ -75,13 +84,13 @@ export default function DashboardPage() {
   }
 
   async function enableMfa() {
-    setMfaError(""); setMfaMessage("");
+    setMfaError(""); setFeedback("");
     const token = localStorage.getItem("citypulse_token");
     if (!token) return;
     setMfaBusy(true);
     try {
       const result = await api<{ message: string }>("/mfa/enable", { method: "POST" }, token);
-      setMfaMessage(result.message);
+      setFeedback(result.message);
       setUser((current) => current ? { ...current, mfa_enabled: true } : current);
     } catch (error) { setMfaError(error instanceof Error ? error.message : "Could not enable email MFA."); }
     finally { setMfaBusy(false); }
@@ -95,6 +104,7 @@ export default function DashboardPage() {
   const externalMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.latitude},${place.longitude}`)}`;
 
   return <main className="dashboard">
+    {feedback && <FeedbackPopup message={feedback} onDismiss={() => setFeedback("")} />}
     <header className="topbar"><Link className="brand" href="/">◉ CityPulse</Link><div className="navlinks"><span className="user-pill"><span className="avatar">{user.name.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase()}</span><span>{user.name}</span></span><button className="button button-quiet" onClick={logout} disabled={loggingOut}>{loggingOut ? "Signing out…" : "Log out"}</button></div></header>
     <section className="dash-heading"><div><span className="eyebrow">YOUR DASHBOARD · CITYPULSE</span><h1>Hello, {user.name.split(" ")[0]}.</h1><p className="muted">A little clarity for wherever today takes you.</p></div><div className="location-select">⌖ <span>{place.label}</span></div></section>
     <section className="dash-grid">
@@ -107,7 +117,7 @@ export default function DashboardPage() {
         <div className="map-controls"><button className="button button-primary" onClick={useMyLocation} disabled={locationBusy}>{locationBusy ? "Finding you…" : "⌖ Use my current location"}</button>{locationError && <p className="form-error" role="alert">{locationError}</p>}<p className="map-foot"><span>{place.label.toUpperCase()}</span><a href={externalMapUrl} target="_blank" rel="noreferrer">OPEN IN GOOGLE MAPS ↗</a></p></div>
       </article>
     </section>
-    <section className="mfa-card"><div><span className="eyebrow">ACCOUNT SECURITY</span><h2>Email MFA</h2><p>{user.mfa_enabled ? "Enabled. Sign-ins require a six-digit code sent to your email address." : "Require a six-digit email code after your password to protect your account."}</p></div>{!user.mfa_enabled && <button className="button button-quiet" disabled={mfaBusy} onClick={enableMfa}>{mfaBusy ? "Enabling…" : "Enable email MFA"}</button>}{mfaMessage && <p className="form-success" role="status">{mfaMessage}</p>}{mfaError && <p className="form-error" role="alert">{mfaError}</p>}</section>
+    <section className="mfa-card"><div><span className="eyebrow">ACCOUNT SECURITY</span><h2>Email MFA</h2><p>{user.mfa_enabled ? "Enabled. Sign-ins require a six-digit code sent to your email address." : "Require a six-digit email code after your password to protect your account."}</p></div>{!user.mfa_enabled && <button className="button button-quiet" disabled={mfaBusy} onClick={enableMfa}>{mfaBusy ? "Enabling…" : "Enable email MFA"}</button>}{mfaError && <p className="form-error" role="alert">{mfaError}</p>}</section>
     <section className="bottom-note"><span className="note-icon">✦</span><div><strong>Signed in as {user.email}</strong><p>Your session is validated by the Laravel API. Signing out revokes this access token.</p></div><span className="note-arrow">↗</span></section>
     <footer><span>CityPulse · Your city, in clear view.</span><Link href="/">Back to home ↗</Link></footer>
   </main>;
