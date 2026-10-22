@@ -51,7 +51,7 @@ export default function LoginPage() {
             </>
           )}
           {error && <p className="form-error" role="alert">{error}</p>}
-          <button className="button button-primary full" type="submit" disabled={busy}>{busy ? "Please wait…" : challenge ? "Verify and sign in →" : "Continue →"}</button>
+          <button className="button button-primary full" type="submit" disabled={busy}>{busy ? (challenge ? "Verifying…" : "Sending verification code…") : challenge ? "Verify and sign in →" : "Continue →"}</button>
         </form>
         {challenge && <button className="text-button back-auth" onClick={() => { setChallenge(""); setError(""); }}>← Back to email and password</button>}
         <p className="auth-bottom">New here? <Link href="/register">Create an account</Link></p>

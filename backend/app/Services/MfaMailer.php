@@ -19,6 +19,8 @@ class MfaMailer
             $mailer->Username = (string) config('services.mfa_mailer.username');
             $mailer->Password = (string) config('services.mfa_mailer.password');
             $mailer->SMTPSecure = (string) config('services.mfa_mailer.encryption');
+            // Limit connection time so an unreachable mail server cannot exhaust PHP's request limit.
+            $mailer->Timeout = (int) config('services.mfa_mailer.timeout');
             $mailer->CharSet = PHPMailer::CHARSET_UTF8;
             $mailer->setFrom((string) config('services.mfa_mailer.from.address'), (string) config('services.mfa_mailer.from.name'));
             $mailer->addAddress($recipient);
