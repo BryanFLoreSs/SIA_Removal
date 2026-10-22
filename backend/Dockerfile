@@ -8,7 +8,7 @@ RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --opt
 COPY . ./
 RUN composer dump-autoload --no-dev --optimize --no-scripts
 
-FROM php:8.3-apache
+FROM php:8.4-apache
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends libpq-dev libzip-dev \

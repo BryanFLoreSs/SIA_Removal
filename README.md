@@ -41,7 +41,7 @@ flowchart LR
 ### Requirements
 
 - Node.js 20+ and npm
-- PHP 8.2+, Composer, and a supported PDO database driver
+- PHP 8.4+, Composer, and a supported PDO database driver
 - A database server if you are not using SQLite
 - A Google Maps Platform project for the map and weather integrations
 - An SMTP account for email MFA in a full local sign-in test
