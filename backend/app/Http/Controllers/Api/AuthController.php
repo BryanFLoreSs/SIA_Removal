@@ -18,6 +18,7 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        $request->merge(['email' => Str::lower((string) $request->input('email'))]);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -30,7 +31,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $data = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
-        $user = User::where('email', $data['email'])->first();
+        $user = User::where('email', Str::lower($data['email']))->first();
         if (!$user || !Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages(['email' => ['The provided credentials are incorrect.']]);
         }
@@ -63,15 +64,16 @@ class AuthController extends Controller
 
     public function forgotPassword(Request $request)
     {
-        $request->validate(['email' => ['required', 'email']]);
+        $data = $request->validate(['email' => ['required', 'email']]);
         // Uses Laravel's broker, configured expiration and throttling. Always return a generic response.
-        \Illuminate\Support\Facades\Password::sendResetLink($request->only('email'));
+        \Illuminate\Support\Facades\Password::sendResetLink(['email' => Str::lower($data['email'])]);
         return response()->json(['message' => 'If the account can receive a reset link, instructions will be sent shortly.']);
     }
 
     public function resetPassword(Request $request)
     {
         $data = $request->validate(['token' => ['required'], 'email' => ['required', 'email'], 'password' => ['required', 'min:12', 'confirmed']]);
+        $data['email'] = Str::lower($data['email']);
         $status = \Illuminate\Support\Facades\Password::reset($data, function (User $user, string $password) {
             $user->forceFill(['password' => Hash::make($password)])->save();
             $user->tokens()->delete();
